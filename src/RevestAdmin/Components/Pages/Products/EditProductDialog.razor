@@ -1,0 +1,84 @@
+@inject ProductApiService ProductService
+@inject ISnackbar Snackbar
+
+<MudDialog @bind-IsVisible="_open" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent><MudText Typo="Typo.h6">Edit Product</MudText></TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" Style="display:flex; flex-direction:column; gap:16px; margin-top:8px;">
+            <MudTextField @bind-Value="_name" Label="Name" Required="true"
+                          Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_description" Label="Description"
+                          Lines="3" Variant="Variant.Outlined" />
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <MudNumericField @bind-Value="_price" Label="Price *" Min="0m" Step="0.01m"
+                                 Format="F2" Variant="Variant.Outlined" HideSpinButtons="true" />
+                <MudNumericField @bind-Value="_stock" Label="Stock *" Min="0"
+                                 Variant="Variant.Outlined" HideSpinButtons="true" />
+            </div>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@_submitting"
+                   OnClick="Submit">
+            @if (_submitting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Saving…</span>
+            }
+            else
+            {
+                <span>Save Changes</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public Product? Product { get; set; }
+    [Parameter] public EventCallback OnUpdated { get; set; }
+    [Parameter] public EventCallback OnClose   { get; set; }
+
+    private bool _open = false;
+    private bool _submitting = false;
+    private MudForm? _form;
+
+    private string _name = "";
+    private string? _description;
+    private decimal _price = 0;
+    private int _stock = 0;
+
+    protected override void OnParametersSet()
+    {
+        if (Product is not null)
+        {
+            _open        = true;
+            _name        = Product.Name;
+            _description = Product.Description;
+            _price       = Product.Price;
+            _stock       = Product.Stock;
+        }
+    }
+
+    private async Task Cancel()
+    {
+        _open = false;
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_name) || Product is null) return;
+        _submitting = true;
+        try
+        {
+            await ProductService.UpdateProductAsync(Product.Id,
+                new UpdateProductRequest(_name, _description, _price, _stock));
+            Snackbar.Add($"Product \"{_name}\" updated successfully", Severity.Success);
+            _open = false;
+            await OnUpdated.InvokeAsync();
+        }
+        catch (ApiException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _submitting = false; }
+    }
+}

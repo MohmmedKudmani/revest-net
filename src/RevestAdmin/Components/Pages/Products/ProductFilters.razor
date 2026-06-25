@@ -1,0 +1,122 @@
+@implements IDisposable
+
+<MudPaper Elevation="1" Style="border-radius:12px; padding:10px 16px; margin-bottom:16px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+
+        <!-- Left: Search -->
+        <DebouncedInput Value="@Query.Search" Placeholder="Search by name…"
+                        HasSearchIcon="true" Style="width:220px; flex-shrink:0;"
+                        OnDebouncedChange="@(v => Emit(Query with { Search = v }))" />
+
+        <!-- Right: all other controls -->
+        <div style="display:flex; align-items:center; gap:12px;">
+
+            <!-- Price range -->
+            <div style="display:flex; align-items:center; gap:6px;">
+                <MudNumericField T="decimal?" Value="@_minPrice" Placeholder="Min $"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:88px;"
+                                 HideSpinButtons="true" Immediate="true"
+                                 ValueChanged="OnMinPriceChanged" Min="0" />
+                <span style="font-size:0.75rem; color:var(--muted-foreground); flex-shrink:0;">–</span>
+                <MudNumericField T="decimal?" Value="@_maxPrice" Placeholder="Max $"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:88px;"
+                                 HideSpinButtons="true" Immediate="true"
+                                 ValueChanged="OnMaxPriceChanged" Min="0" />
+            </div>
+
+            <div style="width:1px; height:28px; background:var(--border); flex-shrink:0;"></div>
+
+            <!-- Sort -->
+            <div style="display:flex; align-items:center; gap:6px;">
+                <MudSelect T="string" Value="@(Query.SortBy ?? "createdAt")" Variant="Variant.Outlined"
+                           Margin="Margin.Dense" Style="width:148px;"
+                           ValueChanged="@(v => Emit(Query with { SortBy = v }))">
+                    <MudSelectItem Value="@("createdAt")">Created</MudSelectItem>
+                    <MudSelectItem Value="@("name")">Name</MudSelectItem>
+                    <MudSelectItem Value="@("price")">Price</MudSelectItem>
+                    <MudSelectItem Value="@("stock")">Stock</MudSelectItem>
+                </MudSelect>
+                <MudSelect T="string" Value="@(Query.SortOrder ?? "desc")" Variant="Variant.Outlined"
+                           Margin="Margin.Dense" Style="width:110px;"
+                           ValueChanged="@(v => Emit(Query with { SortOrder = v }))">
+                    <MudSelectItem Value="@("desc")">Desc</MudSelectItem>
+                    <MudSelectItem Value="@("asc")">Asc</MudSelectItem>
+                </MudSelect>
+            </div>
+
+            <div style="width:1px; height:28px; background:var(--border); flex-shrink:0;"></div>
+
+            <!-- In stock -->
+            <MudCheckBox T="bool" Checked="@(Query.InStock == true)"
+                         CheckedChanged="@((bool v) => Emit(Query with { InStock = v ? true : null }))"
+                         Label="In stock only" Color="Color.Primary" Dense="true" />
+
+            @if (HasActiveFilters)
+            {
+                <div style="width:1px; height:28px; background:var(--border); flex-shrink:0;"></div>
+                <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Close"
+                           OnClick="ClearFilters">Clear</MudButton>
+            }
+        </div>
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public ProductQuery Query { get; set; } = new();
+    [Parameter, EditorRequired] public EventCallback<ProductQuery> OnFilterChanged { get; set; }
+
+    private decimal? _minPrice;
+    private decimal? _maxPrice;
+    private CancellationTokenSource? _priceCts;
+
+    protected override void OnParametersSet()
+    {
+        _minPrice = Query.MinPrice;
+        _maxPrice = Query.MaxPrice;
+    }
+
+    private bool HasActiveFilters => !string.IsNullOrEmpty(Query.Search)
+        || Query.MinPrice.HasValue || Query.MaxPrice.HasValue || Query.InStock.HasValue;
+
+    private async Task OnMinPriceChanged(decimal? v)
+    {
+        _minPrice = v;
+        await EmitPriceDebounced();
+    }
+
+    private async Task OnMaxPriceChanged(decimal? v)
+    {
+        _maxPrice = v;
+        await EmitPriceDebounced();
+    }
+
+    private async Task EmitPriceDebounced()
+    {
+        _priceCts?.Cancel();
+        _priceCts?.Dispose();
+        _priceCts = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(300, _priceCts.Token);
+            await Emit(Query with { MinPrice = _minPrice, MaxPrice = _maxPrice });
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private Task Emit(ProductQuery q) => OnFilterChanged.InvokeAsync(q with { Page = 1 });
+
+    private Task ClearFilters()
+    {
+        _minPrice = null;
+        _maxPrice = null;
+        return OnFilterChanged.InvokeAsync(
+            new ProductQuery(SortBy: Query.SortBy, SortOrder: Query.SortOrder, Limit: Query.Limit));
+    }
+
+    public void Dispose()
+    {
+        _priceCts?.Cancel();
+        _priceCts?.Dispose();
+    }
+}

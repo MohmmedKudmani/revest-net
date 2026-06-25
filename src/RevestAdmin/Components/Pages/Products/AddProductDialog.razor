@@ -1,0 +1,79 @@
+@inject ProductApiService ProductService
+@inject ISnackbar Snackbar
+
+<!-- Trigger button: solid blue, size large, with + icon -->
+<MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+           StartIcon="@Icons.Material.Filled.Add" OnClick="Open">
+    Add Product
+</MudButton>
+
+<MudDialog @bind-IsVisible="_open" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent><MudText Typo="Typo.h6">Add Product</MudText></TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" Style="display:flex; flex-direction:column; gap:16px; margin-top:8px;">
+            <MudTextField @bind-Value="_name" Label="Name" Required="true"
+                          Placeholder="Wireless Mouse" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_description" Label="Description"
+                          Placeholder="Optional description…" Lines="3"
+                          Variant="Variant.Outlined" />
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <MudNumericField T="decimal?" @bind-Value="_price" Label="Price *" Required="true"
+                                 Placeholder="0.00" Format="F2" Variant="Variant.Outlined" HideSpinButtons="true" />
+                <MudNumericField T="int?" @bind-Value="_stock" Label="Stock *" Required="true"
+                                 Placeholder="0" Variant="Variant.Outlined" HideSpinButtons="true" />
+            </div>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="@(() => _open = false)">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@_submitting"
+                   OnClick="Submit">
+            @if (_submitting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Creating…</span>
+            }
+            else
+            {
+                <span>Create Product</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public EventCallback OnCreated { get; set; }
+
+    private bool _open = false;
+    private bool _submitting = false;
+    private MudForm? _form;
+
+    private string _name = "";
+    private string? _description;
+    private decimal? _price;
+    private int? _stock;
+
+    private void Open() { _open = true; ResetForm(); }
+    private void ResetForm() { _name = ""; _description = null; _price = null; _stock = null; }
+
+    private async Task Submit()
+    {
+        await _form!.Validate();
+        if (!_form.IsValid) return;
+        _submitting = true;
+        try
+        {
+            await ProductService.CreateProductAsync(new CreateProductRequest(_name, _description, _price.Value, _stock.Value));
+            Snackbar.Add($"Product \"{_name}\" created successfully", Severity.Success);
+            _open = false;
+            _submitting = false;
+            StateHasChanged(); // force dialog to close before parent reloads
+            await OnCreated.InvokeAsync();
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+            _submitting = false;
+        }
+    }
+}

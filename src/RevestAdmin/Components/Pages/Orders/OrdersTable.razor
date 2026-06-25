@@ -1,0 +1,54 @@
+<MudSimpleTable Style="border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <thead>
+        <tr style="background:oklch(0.966 0.004 247 / 40%);">
+            <th class="revest-th">Product</th>
+            <th class="revest-th" style="text-align:center;">Qty</th>
+            <th class="revest-th" style="text-align:right;">Unit Price</th>
+            <th class="revest-th" style="text-align:right;">Total</th>
+            <th class="revest-th">Status</th>
+            <th class="revest-th">Created</th>
+            <th class="revest-th" style="text-align:right; width:64px;">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in Orders)
+        {
+            <tr class="revest-row" style="@(order.Product is null ? "opacity:0.6;" : "")">
+                <td class="revest-td" style="font-weight:600;">
+                    @if (order.Product is null)
+                    {
+                        <span class="revest-badge revest-badge-outline">⚠ Deleted</span>
+                    }
+                    else
+                    {
+                        @order.Product.Name
+                    }
+                </td>
+                <td class="revest-td" style="text-align:center; font-weight:500; font-variant-numeric:tabular-nums;">
+                    @order.Quantity
+                </td>
+                <td class="revest-td" style="text-align:right; color:var(--muted-foreground); font-variant-numeric:tabular-nums;">
+                    @(order.Product?.Price.ToString("C") ?? "—")
+                </td>
+                <td class="revest-td" style="text-align:right; font-weight:600; font-variant-numeric:tabular-nums;">
+                    @order.TotalPrice.ToString("C")
+                </td>
+                <td class="revest-td">
+                    <OrderStatusSelect Order="@order" Disabled="@(order.Product is null)"
+                                       OnStatusChanged="@(() => OnReload.InvokeAsync())" />
+                </td>
+                <td class="revest-td" style="color:var(--muted-foreground);">
+                    @order.CreatedAt.ToString("MMM d, yyyy")
+                </td>
+                <td class="revest-td" style="text-align:right;">
+                    <DeleteOrderDialog Order="@order" OnDeleted="@(() => OnReload.InvokeAsync())" />
+                </td>
+            </tr>
+        }
+    </tbody>
+</MudSimpleTable>
+
+@code {
+    [Parameter, EditorRequired] public List<Order> Orders { get; set; } = [];
+    [Parameter] public EventCallback OnReload { get; set; }
+}

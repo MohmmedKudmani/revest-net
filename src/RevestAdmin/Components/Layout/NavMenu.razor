@@ -1,30 +1,22 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">RevestAdmin</a>
+@inject NavigationManager Nav
+
+<div style="padding: 20px 16px 16px;">
+    <!-- Logo / brand -->
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+        <div style="width:32px; height:32px; border-radius:8px; background:var(--primary);
+                    display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,0.2);">
+            <MudIcon Icon="@Icons.Material.Filled.Inventory2" Style="color:white; font-size:17px;" />
+        </div>
+        <span style="font-family:'Inter',sans-serif; font-size:1rem; font-weight:600; letter-spacing:-0.02em;">
+            Revest Admin
+        </span>
     </div>
+
+    <MudDivider Style="margin-bottom:8px;" />
+
+    <!-- Nav items -->
+    <MudNavMenu Margin="Margin.Dense">
+        <NavItem Href="/products" Icon="@Icons.Material.Filled.Inventory2" Label="Products" />
+        <NavItem Href="/orders"   Icon="@Icons.Material.Filled.Checklist"  Label="Orders" />
+    </MudNavMenu>
 </div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
-

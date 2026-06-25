@@ -1,0 +1,45 @@
+@implements IDisposable
+
+<MudTextField T="string" Value="@_localValue" ValueChanged="OnInput"
+              Placeholder="@Placeholder" Variant="Variant.Outlined" Margin="Margin.Dense"
+              Immediate="true"
+              Adornment="@(HasSearchIcon ? Adornment.Start : Adornment.None)"
+              AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Default"
+              Style="@Style" />
+
+@code {
+    [Parameter] public string Value         { get; set; } = "";
+    [Parameter] public string Placeholder   { get; set; } = "";
+    [Parameter] public string Style         { get; set; } = "";
+    [Parameter] public bool   HasSearchIcon { get; set; } = false;
+    [Parameter] public int    Delay         { get; set; } = 300;
+    [Parameter] public EventCallback<string> OnDebouncedChange { get; set; }
+
+    private string _localValue = "";
+    private CancellationTokenSource? _cts;
+
+    protected override void OnParametersSet()
+    {
+        if (_localValue != Value) _localValue = Value;
+    }
+
+    private async Task OnInput(string value)
+    {
+        _localValue = value;
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(Delay, _cts.Token);
+            await OnDebouncedChange.InvokeAsync(_localValue);
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+}

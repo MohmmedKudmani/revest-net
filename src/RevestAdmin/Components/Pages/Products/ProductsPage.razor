@@ -1,0 +1,162 @@
+@page "/products"
+@implements IDisposable
+@using RevestAdmin.Helpers
+@inject ProductApiService ProductService
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<!-- Page header -->
+<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:24px;">
+    <div>
+        <h1 style="font-family:'Inter',sans-serif; font-size:1.875rem; font-weight:600; letter-spacing:-0.02em; margin:0;">
+            Products
+        </h1>
+        @if (_result is not null)
+        {
+            <div style="margin-top:6px;">
+                <span class="revest-badge revest-badge-primary">@_result.Total items</span>
+            </div>
+        }
+    </div>
+    <AddProductDialog OnCreated="Reload" />
+</div>
+
+<!-- Filters -->
+<ProductFilters Query="@_currentQuery" OnFilterChanged="ApplyFilters" />
+
+<!-- Loading bar -->
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Style="border-radius:4px; margin-bottom:8px;" />
+}
+
+@if (_result is not null)
+{
+    @if (_result.Data.Any())
+    {
+        <ProductsTable Products="@_result.Data.ToList()"
+                       OnEdit="ShowEditDialog"
+                       OnDelete="ShowDeleteDialog" />
+
+        <DataPagination CurrentPage="@_currentQuery.Page" TotalPages="@_result.TotalPages"
+                        Total="@_result.Total" Limit="@_currentQuery.Limit"
+                        OnPageChange="GoToPage" />
+    }
+    else
+    {
+        <!-- Empty state -->
+        <div class="revest-empty">
+            <div class="revest-empty-icon">
+                <MudIcon Icon="@Icons.Material.Outlined.Inventory2" Style="font-size:22px;" />
+            </div>
+            @if (_hasFilters)
+            {
+                <div>
+                    <p style="font-weight:600; margin:0;">No products match your filters</p>
+                    <p style="color:var(--muted-foreground); margin:4px 0 0;">Try adjusting your search or filters.</p>
+                </div>
+            }
+            else
+            {
+                <div>
+                    <p style="font-weight:600; margin:0;">No products yet</p>
+                    <p style="color:var(--muted-foreground); margin:4px 0 0;">Add your first product to get started.</p>
+                </div>
+                <AddProductDialog OnCreated="Reload" />
+            }
+        </div>
+    }
+}
+
+<!-- Edit / Delete dialogs — always in tree so portal lifecycle is managed by MudBlazor -->
+<EditProductDialog Product="@_editProduct" OnUpdated="OnProductUpdated" OnClose="@(() => _editProduct = null)" />
+<DeleteProductDialog Product="@_deleteProduct" OnDeleted="OnProductDeleted" OnClose="@(() => _deleteProduct = null)" />
+
+@code {
+    private PaginatedResult<Product>? _result;
+    private ProductQuery _currentQuery = new();
+    private bool _loading = false;
+    private Product? _editProduct;
+    private Product? _deleteProduct;
+    private bool _hasFilters => !string.IsNullOrEmpty(_currentQuery.Search)
+        || _currentQuery.MinPrice.HasValue || _currentQuery.MaxPrice.HasValue
+        || _currentQuery.InStock.HasValue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+        await LoadFromUrl();
+    }
+
+    // LocationChanged fires for every navigation, including query-string-only changes on the same path
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+        => await InvokeAsync(LoadFromUrl);
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+
+    private async Task LoadFromUrl()
+    {
+        var uri = Nav.Uri;
+        _currentQuery = new ProductQuery(
+            Search: QueryHelper.GetParam(uri, "search"),
+            MinPrice: QueryHelper.GetDecimalParam(uri, "minPrice"),
+            MaxPrice: QueryHelper.GetDecimalParam(uri, "maxPrice"),
+            InStock: QueryHelper.GetBoolParam(uri, "inStock"),
+            SortBy: QueryHelper.GetParam(uri, "sortBy") ?? "createdAt",
+            SortOrder: QueryHelper.GetParam(uri, "sortOrder") ?? "desc",
+            Page: QueryHelper.GetIntParam(uri, "page", 1),
+            Limit: QueryHelper.GetIntParam(uri, "limit", 10)
+        );
+
+        _loading = true;
+        StateHasChanged();
+
+        try
+        {
+            _result = await ProductService.GetProductsAsync(_currentQuery);
+
+            // Out-of-bounds page guard
+            if (_result.TotalPages > 0 && _currentQuery.Page > _result.TotalPages)
+                GoToPage(_result.TotalPages);
+        }
+        catch (ApiException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _loading = false; StateHasChanged(); }
+    }
+
+    private void ApplyFilters(ProductQuery q)
+    {
+        var p = new Dictionary<string, object?>
+        {
+            ["search"]    = string.IsNullOrEmpty(q.Search) ? null : (object?)q.Search,
+            ["minPrice"]  = (object?)q.MinPrice,
+            ["maxPrice"]  = (object?)q.MaxPrice,
+            ["inStock"]   = q.InStock == true ? (object?)"true" : null,
+            ["sortBy"]    = q.SortBy ?? "createdAt",
+            ["sortOrder"] = q.SortOrder ?? "desc",
+            ["page"]      = 1,
+            ["limit"]     = q.Limit,
+        };
+        Nav.NavigateTo(Nav.GetUriWithQueryParameters(p));
+    }
+
+    private void GoToPage(int page)
+        => Nav.NavigateTo(Nav.GetUriWithQueryParameters(
+            new Dictionary<string, object?> { ["page"] = page }));
+
+    private async Task Reload() => await LoadFromUrl();
+
+    private async Task OnProductUpdated()
+    {
+        _editProduct = null;
+        await LoadFromUrl();
+    }
+
+    private async Task OnProductDeleted()
+    {
+        _deleteProduct = null;
+        await LoadFromUrl();
+    }
+
+    private void ShowEditDialog(Product p)   => _editProduct = p;
+    private void ShowDeleteDialog(Product p) => _deleteProduct = p;
+}

@@ -1,0 +1,71 @@
+@inject OrderApiService OrderService
+@inject ISnackbar Snackbar
+
+<!-- Styled select that changes colour per status -->
+<MudSelect T="string" Value="@_displayed" ValueChanged="OnChanged"
+           Variant="Variant.Outlined" Margin="Margin.Dense"
+           Disabled="@(Disabled || _updating)"
+           Style="@SelectStyle" Dense="true">
+    <MudSelectItem Value="@("PENDING")">
+        <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.636 0.168 70.08);display:inline-block;"></span>
+            Pending
+        </div>
+    </MudSelectItem>
+    <MudSelectItem Value="@("CONFIRMED")">
+        <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.527 0.154 150.069);display:inline-block;"></span>
+            Confirmed
+        </div>
+    </MudSelectItem>
+    <MudSelectItem Value="@("CANCELLED")">
+        <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.577 0.245 27.325);display:inline-block;"></span>
+            Cancelled
+        </div>
+    </MudSelectItem>
+</MudSelect>
+
+@code {
+    [Parameter, EditorRequired] public Order Order    { get; set; } = null!;
+    [Parameter]                 public bool  Disabled { get; set; }
+    [Parameter]                 public EventCallback OnStatusChanged { get; set; }
+
+    private string _displayed = "";
+    private bool   _updating  = false;
+
+    protected override void OnParametersSet() => _displayed = Order.Status;
+
+    private string SelectStyle => _displayed switch
+    {
+        "PENDING"   => "width:144px; background:oklch(0.636 0.168 70.08 / 10%); color:oklch(0.636 0.168 70.08);",
+        "CONFIRMED" => "width:144px; background:oklch(0.527 0.154 150.069 / 10%); color:oklch(0.527 0.154 150.069);",
+        "CANCELLED" => "width:144px; background:oklch(0.577 0.245 27.325 / 10%); color:oklch(0.577 0.245 27.325);",
+        _           => "width:144px;"
+    };
+
+    private async Task OnChanged(string newStatus)
+    {
+        var previous = _displayed;
+        _displayed = newStatus;    // optimistic update
+        _updating  = true;
+        StateHasChanged();
+
+        try
+        {
+            await OrderService.UpdateOrderStatusAsync(Order.Id, newStatus);
+            Snackbar.Add($"Order status updated to {newStatus}", Severity.Success);
+            await OnStatusChanged.InvokeAsync();
+        }
+        catch (ApiException ex)
+        {
+            _displayed = previous; // revert on failure
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _updating = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,0 +1,18 @@
+@* Exact match to original StockBadge: out-of-stock red, low amber, in-stock green *@
+
+@if (Stock == 0)
+{
+    <span class="revest-badge revest-badge-danger">Out of stock</span>
+}
+else if (Stock < 5)
+{
+    <span class="revest-badge revest-badge-warning">Low · @Stock</span>
+}
+else
+{
+    <span class="revest-badge revest-badge-success">@Stock in stock</span>
+}
+
+@code {
+    [Parameter, EditorRequired] public int Stock { get; set; }
+}

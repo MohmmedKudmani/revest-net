@@ -1,0 +1,71 @@
+@inject NavigationManager Nav
+
+@if (TotalPages > 1 && Total > 0)
+{
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:16px;">
+        <!-- Left: showing X–Y of Z -->
+        <span style="font-size:0.875rem; color:var(--muted-foreground);">
+            Showing <strong style="color:var(--foreground);">@Start</strong>–<strong style="color:var(--foreground);">@End</strong>
+            of <strong style="color:var(--foreground);">@Total</strong>
+        </span>
+
+        <!-- Right: page nav -->
+        <div style="display:flex; align-items:center; gap:4px;">
+            <!-- Prev -->
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small"
+                           Disabled="@(!HasPrevPage)" OnClick="@(() => GoToPage(CurrentPage - 1))" />
+
+            @foreach (var pg in PageWindow)
+            {
+                if (pg == -1)
+                {
+                    <span style="padding:0 4px; color:var(--muted-foreground);">…</span>
+                }
+                else
+                {
+                    <MudButton Variant="@(pg == CurrentPage ? Variant.Filled : Variant.Text)"
+                               Color="@(pg == CurrentPage ? Color.Primary : Color.Default)"
+                               Size="Size.Small" Style="min-width:32px; height:32px; padding:0;"
+                               OnClick="@(() => GoToPage(pg))">@pg</MudButton>
+                }
+            }
+
+            <!-- Next -->
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small"
+                           Disabled="@(!HasNextPage)" OnClick="@(() => GoToPage(CurrentPage + 1))" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public int CurrentPage { get; set; }
+    [Parameter, EditorRequired] public int TotalPages  { get; set; }
+    [Parameter, EditorRequired] public int Total       { get; set; }
+    [Parameter, EditorRequired] public int Limit       { get; set; }
+    [Parameter]                 public EventCallback<int> OnPageChange { get; set; }
+
+    private bool HasPrevPage => CurrentPage > 1;
+    private bool HasNextPage => CurrentPage < TotalPages;
+    private int Start => Total == 0 ? 0 : (CurrentPage - 1) * Limit + 1;
+    private int End   => Math.Min(CurrentPage * Limit, Total);
+
+    // Page windowing: mirrors original JS logic — ≤7 pages: all; else smart ellipsis window
+    private IEnumerable<int> PageWindow
+    {
+        get
+        {
+            if (TotalPages <= 7)
+                return Enumerable.Range(1, TotalPages);
+
+            if (CurrentPage <= 4)
+                return [1, 2, 3, 4, 5, -1, TotalPages];
+
+            if (CurrentPage >= TotalPages - 3)
+                return [1, -1, TotalPages - 4, TotalPages - 3, TotalPages - 2, TotalPages - 1, TotalPages];
+
+            return [1, -1, CurrentPage - 1, CurrentPage, CurrentPage + 1, -1, TotalPages];
+        }
+    }
+
+    private Task GoToPage(int page) => OnPageChange.InvokeAsync(page);
+}

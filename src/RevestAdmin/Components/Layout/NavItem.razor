@@ -1,0 +1,15 @@
+@inject NavigationManager Nav
+
+<MudNavLink Href="@Href" Match="NavLinkMatch.Prefix"
+            Icon="@Icon"
+            IconColor="@(IsActive ? Color.Primary : Color.Default)">
+    @Label
+</MudNavLink>
+
+@code {
+    [Parameter] public string Href  { get; set; } = "";
+    [Parameter] public string Icon  { get; set; } = "";
+    [Parameter] public string Label { get; set; } = "";
+
+    private bool IsActive => Nav.Uri.Contains(Href, StringComparison.OrdinalIgnoreCase);
+}

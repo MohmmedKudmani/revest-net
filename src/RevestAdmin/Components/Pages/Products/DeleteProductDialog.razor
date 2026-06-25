@@ -1,0 +1,63 @@
+@inject ProductApiService ProductService
+@inject ISnackbar Snackbar
+
+<MudDialog @bind-IsVisible="_open" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent><MudText Typo="Typo.h6">Delete Product?</MudText></TitleContent>
+    <DialogContent>
+        <p style="margin:0; color:var(--muted-foreground);">
+            This will permanently delete <strong style="color:var(--foreground);">"@Product?.Name"</strong>.
+            This action cannot be undone.
+        </p>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" Disabled="@_submitting"
+                   OnClick="Submit">
+            @if (_submitting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Deleting…</span>
+            }
+            else
+            {
+                <span>Delete</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public Product? Product { get; set; }
+    [Parameter] public EventCallback OnDeleted { get; set; }
+    [Parameter] public EventCallback OnClose   { get; set; }
+
+    private bool _open = false;
+    private bool _submitting = false;
+
+    protected override void OnParametersSet()
+    {
+        if (Product is not null)
+            _open = true;
+    }
+
+    private async Task Cancel()
+    {
+        _open = false;
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task Submit()
+    {
+        if (Product is null) return;
+        _submitting = true;
+        try
+        {
+            await ProductService.DeleteProductAsync(Product.Id);
+            Snackbar.Add($"Product \"{Product.Name}\" deleted", Severity.Success);
+            _open = false;
+            await OnDeleted.InvokeAsync();
+        }
+        catch (ApiException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _submitting = false; }
+    }
+}

@@ -1,0 +1,54 @@
+@* Build using MudSimpleTable for full visual control over header/row styling *@
+
+<MudSimpleTable Style="border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <thead>
+        <tr style="background:oklch(0.966 0.004 247 / 40%);">
+            <th class="revest-th">Name</th>
+            <th class="revest-th">Description</th>
+            <th class="revest-th" style="text-align:right;">Price</th>
+            <th class="revest-th">Stock</th>
+            <th class="revest-th">Created</th>
+            <th class="revest-th" style="text-align:right; width:96px;">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var product in Products)
+        {
+            <tr class="revest-row">
+                <td class="revest-td" style="font-weight:600;">@product.Name</td>
+                <td class="revest-td" style="max-width:256px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted-foreground);">
+                    @if (string.IsNullOrEmpty(product.Description))
+                    {
+                        <span style="opacity:0.5;">—</span>
+                    }
+                    else
+                    {
+                        @product.Description
+                    }
+                </td>
+                <td class="revest-td" style="text-align:right; font-weight:600; font-variant-numeric:tabular-nums;">
+                    @product.Price.ToString("C")
+                </td>
+                <td class="revest-td"><StockBadge Stock="@product.Stock" /></td>
+                <td class="revest-td" style="color:var(--muted-foreground);">
+                    @product.CreatedAt.ToString("MMM d, yyyy")
+                </td>
+                <td class="revest-td" style="text-align:right;">
+                    <MudIconButton Icon="@Icons.Material.Outlined.Edit" Size="Size.Small"
+                                   Variant="Variant.Text"
+                                   OnClick="@(() => OnEdit.InvokeAsync(product))" />
+                    <MudIconButton Icon="@Icons.Material.Outlined.Delete" Size="Size.Small"
+                                   Variant="Variant.Text"
+                                   Style="color:oklch(0.577 0.245 27.325 / 60%);"
+                                   OnClick="@(() => OnDelete.InvokeAsync(product))" />
+                </td>
+            </tr>
+        }
+    </tbody>
+</MudSimpleTable>
+
+@code {
+    [Parameter, EditorRequired] public List<Product> Products { get; set; } = [];
+    [Parameter] public EventCallback<Product> OnEdit   { get; set; }
+    [Parameter] public EventCallback<Product> OnDelete { get; set; }
+}

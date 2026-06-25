@@ -1,0 +1,56 @@
+<MudPaper Elevation="1" Style="border-radius:12px; padding:12px 16px; margin-bottom:16px;">
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px;">
+
+        <!-- Search (debounced 300ms) -->
+        <DebouncedInput Value="@Query.Search" Placeholder="Search by product name…"
+                        HasSearchIcon="true" Style="width:240px;"
+                        OnDebouncedChange="@(v => Emit(Query with { Search = v }))" />
+
+        <!-- Status filter -->
+        <MudSelect T="string" Value="@(Query.Status ?? "")" Variant="Variant.Outlined"
+                   Margin="Margin.Dense" Style="width:176px;"
+                   ValueChanged="@(v => Emit(Query with { Status = string.IsNullOrEmpty(v) ? null : v }))">
+            <MudSelectItem Value="@("")">All statuses</MudSelectItem>
+            <MudSelectItem Value="@("PENDING")">Pending</MudSelectItem>
+            <MudSelectItem Value="@("CONFIRMED")">Confirmed</MudSelectItem>
+            <MudSelectItem Value="@("CANCELLED")">Cancelled</MudSelectItem>
+        </MudSelect>
+
+        <!-- Sort by -->
+        <MudSelect T="string" Value="@(Query.SortBy ?? "createdAt")" Variant="Variant.Outlined"
+                   Margin="Margin.Dense" Style="width:144px;"
+                   ValueChanged="@(v => Emit(Query with { SortBy = v }))">
+            <MudSelectItem Value="@("createdAt")">Created</MudSelectItem>
+            <MudSelectItem Value="@("totalPrice")">Total Price</MudSelectItem>
+            <MudSelectItem Value="@("quantity")">Quantity</MudSelectItem>
+        </MudSelect>
+
+        <!-- Sort order -->
+        <MudSelect T="string" Value="@(Query.SortOrder ?? "desc")" Variant="Variant.Outlined"
+                   Margin="Margin.Dense" Style="width:112px;"
+                   ValueChanged="@(v => Emit(Query with { SortOrder = v }))">
+            <MudSelectItem Value="@("desc")">Desc</MudSelectItem>
+            <MudSelectItem Value="@("asc")">Asc</MudSelectItem>
+        </MudSelect>
+
+        <!-- Clear filters (when search or status set) -->
+        @if (HasActiveFilters)
+        {
+            <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Close"
+                       OnClick="ClearFilters">Clear filters</MudButton>
+        }
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public OrderQuery Query { get; set; } = new();
+    [Parameter, EditorRequired] public EventCallback<OrderQuery> OnFilterChanged { get; set; }
+
+    private bool HasActiveFilters => !string.IsNullOrEmpty(Query.Search) || !string.IsNullOrEmpty(Query.Status);
+
+    private Task Emit(OrderQuery q) => OnFilterChanged.InvokeAsync(q with { Page = 1 });
+
+    private Task ClearFilters() => OnFilterChanged.InvokeAsync(
+        new OrderQuery(SortBy: Query.SortBy, SortOrder: Query.SortOrder, Limit: Query.Limit));
+}
