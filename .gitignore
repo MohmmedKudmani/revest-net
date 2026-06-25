@@ -1,0 +1,61 @@
+# ============================================================
+# .NET build artifacts
+# ============================================================
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.idea/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+!**/[Pp]ackages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# EF Core migrations temp files
+*.db-shm
+*.db-wal
+
+# ============================================================
+# Runtime / secrets
+# ============================================================
+# SQLite database files (generated at runtime)
+*.db
+
+# Local config overrides (may contain secrets)
+appsettings.Local.json
+appsettings.*.Local.json
+.env
+.env.*
+!.env.example
+
+# ============================================================
+# OS / editor noise
+# ============================================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+# Track settings.json (shared formatting) but ignore personal configs
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/*.code-snippets
+
+# ============================================================
+# Project-specific
+# ============================================================
+# Planning docs (internal — not part of the codebase)
+plan/
+
+# Claude Code session files (keep skills + settings, ignore transcripts)
+.claude/transcripts/
+.claude/todos/

@@ -1,0 +1,51 @@
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C# files — this is the Prettier equivalent for .NET
+[*.cs]
+indent_style = space
+indent_size = 4
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# Namespace preferences
+csharp_style_namespace_declarations = file_scoped:warning
+
+# Prefer modern C# syntax
+csharp_prefer_braces = true:warning
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+
+# New line preferences
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+
+# Spacing
+csharp_space_after_cast = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_after_colon_in_inheritance_clause = true
+
+# JSON / config files
+[*.json]
+indent_style = space
+indent_size = 2
+
+# Proto files
+[*.proto]
+indent_style = space
+indent_size = 2
+
+# Razor / HTML
+[*.{razor,cshtml,html}]
+indent_style = space
+indent_size = 4

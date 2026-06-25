@@ -1,0 +1,45 @@
+{
+  // Format C# on save using dotnet format
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+
+  // C# specific
+  "[csharp]": {
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+
+  // Razor components
+  "[razor]": {
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.tabSize": 4
+  },
+
+  // JSON
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.tabSize": 2
+  },
+
+  // Proto files
+  "[proto3]": {
+    "editor.tabSize": 2
+  },
+
+  // Hide noisy generated folders from explorer
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true
+  },
+
+  // Show all file types in search
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/*.db": true
+  },
+
+  // Dotnet format integration
+  "dotnet.formatting.organizeImportsOnFormat": true
+}
