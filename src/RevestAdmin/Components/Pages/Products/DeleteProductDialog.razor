@@ -55,6 +55,8 @@
             await ProductService.DeleteProductAsync(Product.Id);
             Snackbar.Add($"Product \"{Product.Name}\" deleted", Severity.Success);
             _open = false;
+            _submitting = false;
+            StateHasChanged();
             await OnDeleted.InvokeAsync();
         }
         catch (ApiException ex) { Snackbar.Add(ex.Message, Severity.Error); }

@@ -76,6 +76,8 @@
                 new UpdateProductRequest(_name, _description, _price, _stock));
             Snackbar.Add($"Product \"{_name}\" updated successfully", Severity.Success);
             _open = false;
+            _submitting = false;
+            StateHasChanged();
             await OnUpdated.InvokeAsync();
         }
         catch (ApiException ex) { Snackbar.Add(ex.Message, Severity.Error); }
