@@ -1,0 +1,28 @@
+syntax = "proto3";
+option csharp_namespace = "Revest.Contracts";
+package revest;
+
+service ProductGrpcService {
+  rpc GetProduct (GetProductRequest) returns (ProductMessage);
+  rpc GetAllProducts (GetAllProductsRequest) returns (ProductListMessage);
+  rpc SearchProducts (SearchProductsRequest) returns (ProductListMessage);
+  rpc DecrementStock (StockOperationRequest) returns (StockOperationResult);
+  rpc RestoreStock (StockOperationRequest) returns (StockOperationResult);
+}
+
+message GetProductRequest   { string id = 1; }
+message GetAllProductsRequest {}
+message SearchProductsRequest { string name = 1; }
+message StockOperationRequest { string product_id = 1; int32 quantity = 2; }
+
+message ProductMessage {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  int32 stock = 5;
+  string created_at = 6;
+  string updated_at = 7;
+}
+message ProductListMessage { repeated ProductMessage products = 1; }
+message StockOperationResult { bool success = 1; string message = 2; }
