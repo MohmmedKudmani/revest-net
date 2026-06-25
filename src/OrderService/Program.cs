@@ -1,28 +1,44 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using OrderService.Extensions;
+using OrderService.Filters;
+using OrderService.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers()
+// Controllers with camelCase JSON + global exception filter
+builder.Services.AddControllers(options =>
+    {
+        options.Filters.Add<GlobalExceptionFilter>();
+    })
     .AddJsonOptions(o =>
         o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase);
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// Application services: EF Core, OrdersService, OrderOptions, validators, gRPC client
+builder.Services.AddApplicationServices(builder.Configuration);
+
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Kestrel: HTTP/1.1 REST on port 3002 only — no gRPC server
+builder.WebHost.ConfigureKestrel(k =>
+{
+    k.ListenAnyIP(3002, o => o.Protocols = HttpProtocols.Http1);
+});
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseRouting();
 
-app.UseAuthorization();
+// Wrap POST/PATCH/DELETE success responses in { message, data }
+app.UseMiddleware<ResponseWrapperMiddleware>();
 
 app.MapControllers();
 
