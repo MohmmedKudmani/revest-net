@@ -29,11 +29,15 @@ builder.WebHost.ConfigureKestrel(k =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var db = scope.ServiceProvider.GetRequiredService<OrderService.Data.AppDbContext>();
+    db.Database.EnsureCreated();
 }
+
+// Swagger UI available in all environments (learning project)
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseRouting();
 

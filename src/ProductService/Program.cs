@@ -39,19 +39,20 @@ builder.WebHost.ConfigureKestrel(k =>
 
 var app = builder.Build();
 
-// Run migrations and seed on startup
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
-    await Seeder.SeedAsync(db);
+    if (args.Contains("--seed"))
+    {
+        await Seeder.SeedAsync(db);
+        return;
+    }
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Swagger UI available in all environments (learning project)
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseRouting();
 

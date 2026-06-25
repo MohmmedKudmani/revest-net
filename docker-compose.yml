@@ -1,0 +1,86 @@
+services:
+  product-service:
+    build:
+      context: .
+      dockerfile: src/ProductService/Dockerfile
+    ports:
+      - "3001:3001"
+      - "5100:5100"
+    volumes:
+      - product-data:/app/data
+    environment:
+      DATABASE_URL: "Data Source=/app/data/products.db"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  order-service:
+    build:
+      context: .
+      dockerfile: src/OrderService/Dockerfile
+    ports:
+      - "3002:3002"
+    volumes:
+      - order-data:/app/data
+    environment:
+      DATABASE_URL: "Data Source=/app/data/orders.db"
+      PRODUCT_SERVICE_GRPC_URL: "http://product-service:5100"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    depends_on:
+      product-service:
+        condition: service_healthy
+
+  revest-admin:
+    build:
+      context: .
+      dockerfile: src/RevestAdmin/Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - revest-admin-keys:/home/app/.aspnet/DataProtection-Keys
+    environment:
+      ASPNETCORE_URLS: "http://+:5000"
+      PRODUCT_SERVICE_URL: "http://product-service:3001"
+      ORDER_SERVICE_URL: "http://order-service:3002"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 256M
+    depends_on:
+      product-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+
+volumes:
+  product-data:
+  order-data:
+  revest-admin-keys:
