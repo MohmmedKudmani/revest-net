@@ -68,17 +68,17 @@ dotnet tool install --global dotnet-ef
 
 ### Run
 
-Each service runs in its own terminal:
+Each service runs in its own terminal with hot reload:
 
 ```bash
 # Terminal 1
-dotnet run --project src/ProductService
+dotnet watch --project src/ProductService
 
 # Terminal 2
-dotnet run --project src/OrderService
+dotnet watch --project src/OrderService
 
 # Terminal 3
-dotnet run --project src/RevestAdmin
+dotnet watch --project src/RevestAdmin
 ```
 
 ### Seed Products (run once)
